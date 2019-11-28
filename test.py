@@ -7,18 +7,18 @@ from torchvision.utils import save_image
 from model import Model
 
 
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
+# normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+#                                  std=[0.229, 0.224, 0.225])
 
-trans = transforms.Compose([transforms.ToTensor(),
-                            normalize])
+trans = transforms.Compose([transforms.ToTensor()])
+#                             normalize])
 
 
-def denorm(tensor, device):
-    std = torch.Tensor([0.229, 0.224, 0.225]).reshape(-1, 1, 1).to(device)
-    mean = torch.Tensor([0.485, 0.456, 0.406]).reshape(-1, 1, 1).to(device)
-    res = torch.clamp(tensor * std + mean, 0, 1)
-    return res
+# def denorm(tensor, device):
+#     std = torch.Tensor([0.229, 0.224, 0.225]).reshape(-1, 1, 1).to(device)
+#     mean = torch.Tensor([0.485, 0.456, 0.406]).reshape(-1, 1, 1).to(device)
+#     res = torch.clamp(tensor * std + mean, 0, 1)
+#     return res
 
 
 
@@ -69,8 +69,11 @@ def main():
     s_tensor = trans(s).unsqueeze(0).to(device)
 
     with torch.no_grad():
-        out = model.generate(c_tensor, s_tensor)
-    out_denorm = denorm(out, device)
+        t1 = time.time()
+        out = model.generate(c_tensor, s_tensor).to('cpu')
+        t2 = time.time()
+    print('out', t2 - t1)
+
 
     if args.output_name is None:
         c_name = os.path.splitext(os.path.basename(args.content))[0]
@@ -78,7 +81,7 @@ def main():
         args.output_name = f'{c_name}_{s_name}'
 
     try:
-        save_image(out_denorm, f'{args.output_name}.jpg', nrow=1)
+        save_image(out, f'{args.output_name}.jpg', nrow=1)
 
         o = Image.open(f'{args.output_name}.jpg')
         s = s.resize((i // 4 for i in c.size))

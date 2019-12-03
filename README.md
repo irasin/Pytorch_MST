@@ -1,14 +1,15 @@
-
 # Pytorch_MST
-Unofficial Pytorch(1.0+) implementation of ICCV 2019 paper ["Multimodal Style Transfer via Graph Cuts"](https://arxiv.org/abs/1904.04443)
+Unofficial Pytorch(1.0+) implementation of ICCV 2019 paper ["Multimodal Style Transfer via Graph Cuts"](https://arxiv.org/abs/1904.04443).
 
-This repository provides a pre-trained model for you to generate your own image given content image and style image. 
+Original tensorflow implementations from the authon will be found [here](https://github.com/yulunzhang/MST).
+
+This repository provides a pre-trained model for you to generate your own image given content image and style image. Also, you can download the training dataset or prepare your own dataset to train the model from scratch.
 
 If you have any question, please feel free to contact me. (Language in English/Japanese/Chinese will be ok!)
 
 ## Requirements
 
-- Python 3.7
+- Python 3.7+
 - PyTorch 1.0+
 - TorchVision
 - Pillow
@@ -35,29 +36,48 @@ Anaconda environment recommended here!
 
 3. Download the pretrained model [here](https://drive.google.com/open?id=1uWnn0tHloP4wKeTIXcyQNA2MJsNRvOKA)
 
-4. Generate the output image. A transferred output image and a NST_demo_like image will be generated.
+4. Generate the output image. A transferred output image w/&w/o style image and a NST_demo_like image will be generated.
 
    ```python
    python test.py -c content_image_path -s style_image_path
    ```
 
    ```
-   optional arguments:
-   -h, --help             show this help message and exit
-   --content, -c          Content image path e.g. content.jpg
-   --style, -s            Style image path e.g. image.jpg
-   --output_name, -o      Output path for generated image, no need to add ext, e.g. out
-   --n_cluster            number of clusters of k-means
-   --alpha                fusion degree, should be a float or a list which length is n_cluster
-   --lam                  weight of pairwise term in alpha-expansion
-   --max_cycles           max_cycles of alpha-expansion
-   --gpu, -g              GPU ID(nagative value indicate CPU)
-   --model_state_path     pretrained model state
+    usage: test.py [-h] [--content CONTENT] [--style STYLE]
+                [--output_name OUTPUT_NAME] [--n_cluster N_CLUSTER]
+                [--alpha ALPHA] [--lam LAM] [--max_cycles MAX_CYCLES]
+                [--gpu GPU] [--model_state_path MODEL_STATE_PATH]
    ```
 
    If output_name is not given, it will use the combination of content image name and style image name.
 
+
 ------
+
+## train
+
+1. Download [COCO](http://cocodataset.org/#download) (as content dataset)and [Wikiart](https://www.kaggle.com/c/painter-by-numbers) (as style dataset) and unzip them, rename them as `content` and `style`  respectively (recommended).
+
+2. Modify the argument in the` train.py` such as the path of directory, epoch, learning_rate or you can add your own training code.
+
+3. Train the model using gpu.
+
+4. ```python
+   python train.py
+   ```
+
+   ```
+    usage: train.py [-h] [--batch_size BATCH_SIZE] [--epoch EPOCH] [--gpu GPU]
+                    [--learning_rate LEARNING_RATE]
+                    [--snapshot_interval SNAPSHOT_INTERVAL]
+                    [--n_cluster N_CLUSTER] [--alpha ALPHA] [--lam LAM]
+                    [--max_cycles MAX_CYCLES] [--gamma GAMMA]
+                    [--train_content_dir TRAIN_CONTENT_DIR]
+                    [--train_style_dir TRAIN_STYLE_DIR]
+                    [--test_content_dir TEST_CONTENT_DIR]
+                    [--test_style_dir TEST_STYLE_DIR] [--save_dir SAVE_DIR]
+                    [--reuse REUSE]
+   ```
 
 
 

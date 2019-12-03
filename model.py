@@ -1,9 +1,11 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from feature_transfer import MultimodalStyleTransfer
 from normalisedVGG import NormalisedVGG
 from VGGdecoder import Decoder
+from utils import download_file_from_google_drive
 
 
 def calc_mean_std(features):
@@ -14,9 +16,9 @@ def calc_mean_std(features):
 
 
 class VGGEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, pretrained_path=None):
         super().__init__()
-        vgg = NormalisedVGG(pretrained_path=None).net
+        vgg = NormalisedVGG(pretrained_path=pretrained_path).net
         self.block1 = vgg[: 4]
         self.block2 = vgg[4: 11]
         self.block3 = vgg[11: 18]
@@ -42,6 +44,7 @@ class Model(nn.Module):
                  alpha=1,
                  device='cpu',
                  lam=0.1,
+                 pre_train=False,
                  max_cycles=None):
         super().__init__()
         self.n_cluster = n_cluster
@@ -49,8 +52,19 @@ class Model(nn.Module):
         self.device = device
         self.lam = lam
         self.max_cycles = max_cycles
-        self.vgg_encoder = VGGEncoder()
-        self.decoder = Decoder(4, None)
+        if pre_train:
+            if not os.path.exists('vgg_normalised_conv5_1.pth'):
+                download_file_from_google_drive('1IAOFF5rDkVei035228Qp35hcTnliyMol',
+                                                'vgg_normalised_conv5_1.pth')
+            if not os.path.exists('decoder_relu4_1.pth'):
+                download_file_from_google_drive('1kkoyNwRup9y5GT1mPbsZ_7WPQO9qB7ZZ',
+                                                'decoder_relu4_1.pth')
+            self.vgg_encoder = VGGEncoder('vgg_normalised_conv5_1.pth')
+            self.decoder = Decoder(4, 'decoder_relu4_1.pth')
+        else:
+            self.vgg_encoder = VGGEncoder()
+            self.decoder = Decoder(4)
+
         self.multimodal_style_feature_transfer = MultimodalStyleTransfer(n_cluster,
                                                                          alpha,
                                                                          device,
@@ -66,11 +80,11 @@ class Model(nn.Module):
                  lam=None,
                  max_cycles=None):
 
-        n_cluster = self.n_cluster if not n_cluster else n_cluster
-        alpha = self.alpha if not alpha else alpha
-        device = self.device if not device else device
-        lam = self.lam if not lam else lam
-        max_cycles = self.max_cycles if not max_cycles else max_cycles
+        n_cluster = self.n_cluster if n_cluster is None else n_cluster
+        alpha = self.alpha if alpha is None else alpha
+        device = self.device if device is None else device
+        lam = self.lam if lam is None else lam
+        max_cycles = self.max_cycles if max_cycles is None else max_cycles
 
         multimodal_style_feature_transfer = MultimodalStyleTransfer(n_cluster,
                                                                     alpha,
@@ -81,11 +95,12 @@ class Model(nn.Module):
         content_features = self.vgg_encoder(content_images, output_last_feature=True)
         style_features = self.vgg_encoder(style_images, output_last_feature=True)
         cs = []
+
         for c, s in zip(content_features, style_features):
             cs.append(multimodal_style_feature_transfer.transfer(c, s).unsqueeze(dim=0))
         cs = torch.cat(cs, dim=0)
-        out = self.decoder(cs)
 
+        out = self.decoder(cs)
         return out
 
     @staticmethod
@@ -101,15 +116,15 @@ class Model(nn.Module):
             loss += F.mse_loss(c_mean, s_mean) + F.mse_loss(c_std, s_std)
         return loss
 
-    def forward(self, content_images, style_images, gamma=0.01):
+    def forward(self, content_images, style_images, gamma=1):
         content_features = self.vgg_encoder(content_images, output_last_feature=True)
         style_features = self.vgg_encoder(style_images, output_last_feature=True)
 
         cs = []
         for c, s in zip(content_features, style_features):
             cs.append(self.multimodal_style_feature_transfer.transfer(c, s).unsqueeze(dim=0))
-
         cs = torch.cat(cs, dim=0)
+
         out = self.decoder(cs)
 
         output_features = self.vgg_encoder(out, output_last_feature=True)

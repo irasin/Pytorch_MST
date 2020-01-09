@@ -34,7 +34,7 @@ Anaconda environment recommended here!
 
 2. Prepare your content image and style image. I provide some in the `content` and `style` and you can try to use them easily.
 
-3. Download the pretrained model [here](https://drive.google.com/open?id=1uWnn0tHloP4wKeTIXcyQNA2MJsNRvOKA)
+3. Download the pretrained model [here](https://drive.google.com/file/d/16mhOUIo8HKDv9NhlI1GyKvpqST8P9fGw/view?usp=sharing)
 
 4. Generate the output image. A transferred output image w/&w/o style image and a NST_demo_like image will be generated.
 
